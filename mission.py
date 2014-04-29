@@ -22,6 +22,7 @@ headers = {
 
 s = requests.Session()
 
+
 def extract(s, start, end, rm_prefix=True):
     s_ = None
     p = "{0}.*?{1}".format(start, end)
@@ -30,7 +31,7 @@ def extract(s, start, end, rm_prefix=True):
         s_ = s[0]
         if rm_prefix:
             s_ = s_.replace(start, '').replace(end, '')
-    return s_ 
+    return s_
 
 
 def extract_all(s, start, end):
@@ -43,15 +44,17 @@ def extract_all(s, start, end):
 
     return s_list
 
+
 def trim(s):
     return s.strip()
+
 
 def get_once_value():
     once_value = ''
     login_page = s.get(login_url, headers=headers, verify=False).text
 
     once_value = extract(login_page, '<input type="hidden" value="',
-                             '" name="once" />')
+                         '" name="once" />')
     return once_value
 
 
@@ -61,7 +64,7 @@ def get_post_data():
         "next": "/",
         "u": username,
         "p": password,
-        "once": once_value ,
+        "once": once_value,
         "next": "/"
     }
 
@@ -69,7 +72,7 @@ def get_post_data():
 
 
 def login():
-    print "正在登录..."
+    log("正在登录...")
     post_data = get_post_data()
     r = s.post(login_url, data=post_data, headers=headers, verify=False)
 
@@ -79,34 +82,41 @@ def show_balance():
     r = s.get(index_url, headers=headers, verify=False)
     html = r.text
 
-    balance_area = extract(html, '<a href="/balance" class="balance_area" style="">', '</a>', False)
+    balance_area = extract(html,
+                           '<a href="/balance" class="balance_area" style="">',
+                           '</a>', False)
     if balance_area:
-        print "获取账户余额..."
+        log("获取账户余额...")
         s_list = map(trim, filter(None, extract_all(balance_area, '>', '<')))
-        print "账户余额为{0}".format(''.join(s_list))
+        log("账户余额为{0}".format(''.join(s_list)))
 
         return True
     else:
-        print "登录失败!!!"
+        log("登录失败!!!")
 
         return False
 
     return balanch
 
+
 def exe():
-    print "开始领金币..."
+    log("开始领金币...")
     r = s.get(daily_url, headers=headers, verify=False)
     html = r.text
-
-
     href = extract(html, "/mission/daily/redeem", "';")
     if href:
         mission_url = "{0}/mission/daily/redeem{1}".format(index_url, href)
         r = s.get(mission_url, headers=headers, verify=False)
-        print "执行任务结束，再次查看用户余额..."
+        log("执行任务结束，再次查看用户余额...")
     else:
-        print "执行任务失败!!! 是不是已经认领了？"
+        log("执行任务失败!!! 是不是已经认领了？")
 
+
+def log(msg):
+    print msg
+    with open("log.txt", "a") as f:
+        f.write(msg)
+        f.write('\n')
 
 if __name__ == "__main__":
     login()
