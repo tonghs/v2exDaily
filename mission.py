@@ -8,6 +8,8 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+username = "tonghuashuai"
+password = "tonghuashuai"
 index_url = "http://www.v2ex.com"
 login_url = "http://www.v2ex.com/signin"
 daily_url = "http://www.v2ex.com/mission/daily"
@@ -20,18 +22,36 @@ headers = {
 
 s = requests.Session()
 
+def extract(s, start, end, rm_prefix=True):
+    s_ = None
+    p = "{0}.*?{1}".format(start, end)
+    s = re.findall(p, s)
+    if s:
+        s_ = s[0]
+        if rm_prefix:
+            s_ = s_.replace(start, '').replace(end, '')
+    return s_ 
+
+
+def extract_all(s, start, end):
+    s_list = []
+    p = "{0}.*?{1}".format(start, end)
+    s = re.findall(p, s)
+    if s:
+        for o in s:
+            s_list.append(o.replace(start, '').replace(end, ''))
+
+    return s_list
+
+def trim(s):
+    return s.strip()
 
 def get_once_value():
     once_value = ''
     login_page = s.get(login_url, headers=headers, verify=False).text
-    p_once = """<input type="hidden" value="\d+" name="once" />"""
-    once_html = re.findall(p_once, login_page)
 
-    if once_html:
-        once_value = once_html[0]
-        once_value = once_value.replace('<input type="hidden" value="', '')
-        once_value = once_value.replace('" name="once" />', '')
-
+    once_value = extract(login_page, '<input type="hidden" value="',
+                             '" name="once" />')
     return once_value
 
 
@@ -39,8 +59,8 @@ def get_post_data():
     once_value = get_once_value()
     post_data = {
         "next": "/",
-        "u": "tonghuashuai",
-        "p": "tonghuashuai",
+        "u": username,
+        "p": password,
         "once": once_value ,
         "next": "/"
     }
@@ -52,24 +72,44 @@ def login():
     print "正在登录..."
     post_data = get_post_data()
     r = s.post(login_url, data=post_data, headers=headers, verify=False)
-    get_balance()
 
 
-def get_balance():
+def show_balance():
     balanch = 0
     r = s.get(index_url, headers=headers, verify=False)
-    html= r.text
-    with open("/Users/tonghs/Documents/git/v2exDaily/1.log", "w") as f:
-        f.write(html)
-    p = '<a href="/balance" class="balance_area" style="">.*?</a>'
-    target = re.findall(p, html)
-    if target:
-        print "登录成功，获取账户余额..."
-        txt = target[0]
+    html = r.text
+
+    balance_area = extract(html, '<a href="/balance" class="balance_area" style="">', '</a>', False)
+    if balance_area:
+        print "获取账户余额..."
+        s_list = map(trim, filter(None, extract_all(balance_area, '>', '<')))
+        print "账户余额为{0}".format(''.join(s_list))
+
+        return True
     else:
         print "登录失败!!!"
 
+        return False
+
     return balanch
-    
+
+def exe():
+    print "开始领金币..."
+    r = s.get(daily_url, headers=headers, verify=False)
+    html = r.text
+
+
+    href = extract(html, "/mission/daily/redeem", "';")
+    if href:
+        mission_url = "{0}/mission/daily/redeem{1}".format(index_url, href)
+        r = s.get(mission_url, headers=headers, verify=False)
+        print "执行任务结束，再次查看用户余额..."
+    else:
+        print "执行任务失败!!! 是不是已经认领了？"
+
+
 if __name__ == "__main__":
     login()
+    if show_balance():
+        exe()
+        show_balance()
