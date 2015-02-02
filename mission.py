@@ -90,6 +90,8 @@ def show_balance():
         s_list = map(trim, filter(None, extract_all(balance_area, '>', '<')))
         if not s_list[1]:
             s_list[1] = '00'
+        if len(s_list[1]) == 1:
+            s_list = '0' + s_list
         log("账户余额为{0}".format(''.join(s_list)))
 
         return True
