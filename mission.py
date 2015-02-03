@@ -4,12 +4,11 @@
 import requests
 import re
 import sys
+from config import username, password
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-username = "xxxxxxx"
-password = "xxxxxxx"
 index_url = "http://www.v2ex.com"
 login_url = "http://www.v2ex.com/signin"
 daily_url = "http://www.v2ex.com/mission/daily"
